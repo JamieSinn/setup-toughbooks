@@ -1,4 +1,4 @@
-# Set Windows 10 Desktop Wallpaper to FIRST AGE Theme
+# Set Windows 10 Desktop Wallpaper and Lock Screen to FIRST AGE Theme
 # Downloads and applies the official FIRST 2026 season wallpaper
 
 # Verify Windows 10
@@ -8,7 +8,15 @@ if ($OSVersion.Major -ne 10) {
 }
 
 $WallpaperUrl = "https://info.firstinspires.org/hubfs/2026%20Season/Season%20Assets/FIRST_AGE-wallpaper-dark.jpg"
-$WallpaperPath = "$env:APPDATA\Microsoft\Windows\Themes\FIRST_AGE-wallpaper-dark.jpg"
+
+# Use system location for images (accessible for lock screen before login)
+$ImageDir = "C:\Windows\Web\Wallpaper\FIRST"
+$WallpaperPath = "$ImageDir\FIRST_AGE-wallpaper-dark.jpg"
+
+# Create directory if it doesn't exist
+if (-not (Test-Path $ImageDir)) {
+    New-Item -Path $ImageDir -ItemType Directory -Force | Out-Null
+}
 
 # Download the wallpaper image
 Write-Host "Downloading FIRST AGE wallpaper..." -ForegroundColor Cyan
@@ -26,9 +34,12 @@ try {
 Write-Host "Configuring wallpaper style..." -ForegroundColor Cyan
 Set-ItemProperty -Path "HKCU:\Control Panel\Desktop" -Name WallpaperStyle -Value "10"
 Set-ItemProperty -Path "HKCU:\Control Panel\Desktop" -Name TileWallpaper -Value "0"
-Set-ItemProperty -Path "HKCU:\Control Panel\Desktop" -Name Wallpaper -Value $WallpaperPath
 
-# Set lock screen image via registry
+# Apply the desktop wallpaper using SystemParametersInfo via reg and rundll32
+reg add "HKCU\Control Panel\Desktop" /v Wallpaper /t REG_SZ /d $WallpaperPath /f | Out-Null
+RUNDLL32.EXE user32.dll,UpdatePerUserSystemParameters 1,True
+
+# Set lock screen image via registry policy
 Write-Host "Configuring lock screen image..." -ForegroundColor Cyan
 $LockScreenRegPath = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Personalization"
 if (-not (Test-Path $LockScreenRegPath)) {
@@ -37,13 +48,13 @@ if (-not (Test-Path $LockScreenRegPath)) {
 Set-ItemProperty -Path $LockScreenRegPath -Name LockScreenImage -Value $WallpaperPath
 Set-ItemProperty -Path $LockScreenRegPath -Name NoChangingLockScreen -Value 1
 
-# Apply the wallpaper by restarting Explorer (most reliable method for Windows 10)
-Write-Host "Applying wallpaper..." -ForegroundColor Cyan
-Stop-Process -Name explorer -Force
-Start-Sleep -Seconds 1
-Start-Process explorer
+# Disable Windows Spotlight to ensure our lock screen is used
+$ContentDeliveryPath = "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\ContentDeliveryManager"
+Set-ItemProperty -Path $ContentDeliveryPath -Name RotatingLockScreenEnabled -Value 0
+Set-ItemProperty -Path $ContentDeliveryPath -Name RotatingLockScreenOverlayEnabled -Value 0
 
 Write-Host "Wallpaper and lock screen set successfully!" -ForegroundColor Green
+Write-Host "Lock screen will apply on next lock/login." -ForegroundColor Yellow
 
 
 
