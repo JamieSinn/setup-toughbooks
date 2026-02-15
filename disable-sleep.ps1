@@ -54,15 +54,6 @@ Set-ItemProperty -Path $WoLPath -Name HiberbootEnabled -Value 0 -ErrorAction Sil
 $FastStartupPath = "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Power"
 Set-ItemProperty -Path $FastStartupPath -Name HiberbootEnabled -Value 0 -ErrorAction SilentlyContinue
 
-# Enable Remote Desktop
-Write-Host "Enabling Remote Desktop..." -ForegroundColor Cyan
-Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server" -Name fDenyTSConnections -Value 0
-Enable-NetFirewallRule -DisplayGroup "Remote Desktop" -ErrorAction SilentlyContinue
-
-# Enable Windows Remote Management (WinRM)
-Write-Host "Enabling WinRM..." -ForegroundColor Cyan
-Enable-PSRemoting -Force -SkipNetworkProfileCheck -ErrorAction SilentlyContinue
-
 Write-Host "Power settings configured successfully!" -ForegroundColor Green
 Write-Host "Sleep and hibernate are disabled. Computer will stay reachable." -ForegroundColor Green
 
